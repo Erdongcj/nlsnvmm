@@ -74,49 +74,36 @@ void* log_append(Transaction* tx, size_t& len, uintptr_t t)
 	size_t totalSize = 0;
 	struct bfentry *var, *next;
 	if(tx->mythreadID->buffer != NULL && tx->mythreadID->buffer->buckets != NULL){
-/*		for (int i=0; i < tx->mythreadID->buffer->buckets->nbuckets; i++)
-		{
-			var = tx->mythreadID->buffer->buckets->bucket[i];
-			while (var != NULL) 
-			{
-				next = var->next;
-		    	totalSize += var->val.size;                      
-				var = next;
-			}   
-		}   
-*/		if(totalSize == 0)
-			return NULL;
-		len = totalSize;
-		void *ptr = log_malloc(totalSize + tx->mythreadID->buffer->count * sizeof(struct entry_head));
-//		printf("ptr is ............%d\n", reinterpret_cast<uint64_t>(ptr));
-		if(ptr == NULL){
-			assert(0);
-		}
-		uint64_t result = reinterpret_cast<uint64_t>(ptr);
-		struct bfentry *e1, *e2;
-		struct entry_head eh;
-		for(int i=0; i < tx->mythreadID->buffer->buckets->nbuckets; i++)
+	if(totalSize == 0)
+		return NULL;
+	len = totalSize;
+	void *ptr = log_malloc(totalSize + tx->mythreadID->buffer->count * sizeof(struct entry_head));
+	if(ptr == NULL){
+		assert(0);
+	}
+	uint64_t result = reinterpret_cast<uint64_t>(ptr);
+	struct bfentry *e1, *e2;
+	struct entry_head eh;
+	for(int i=0; i < tx->mythreadID->buffer->buckets->nbuckets; i++)
     	{
-			e1 = tx->mythreadID->buffer->buckets->bucket[i];
-			while (e1 != NULL)
-			{
-				e2 = e1->next;
-				eh.haddr = e1->val.bfaddr;
-				eh.version = t;
-				eh.size = e1->val.size;
-				void* head_addr = reinterpret_cast<void*>(result);
-//				printf("result is%d\n", result);
-				memcpy(head_addr, &eh, sizeof(struct entry_head));
-				ae = &(tx->mythreadID->addr_set.entries[tx->mythreadID->addr_set.nb_entries++]);
-				ae->addr = reinterpret_cast<void*>(result + sizeof(struct entry_head));
-				ae->key = e1->key;
-				void *pptr = reinterpret_cast<void*>(result + sizeof(struct entry_head));
-				size_t size = e1->val.size;
-				void *qtr = e1->val.bfaddr;
-				memcpy(pptr, qtr, size);
-				result = result + e1->val.size + sizeof(struct entry_head);
-				e1 = e2;
-   			}
+		e1 = tx->mythreadID->buffer->buckets->bucket[i];
+		while (e1 != NULL)
+		{
+			e2 = e1->next;
+			eh.haddr = e1->val.bfaddr;
+			eh.version = t;
+			eh.size = e1->val.size;
+			void* head_addr = reinterpret_cast<void*>(result);
+			memcpy(head_addr, &eh, sizeof(struct entry_head));
+			ae = &(tx->mythreadID->addr_set.entries[tx->mythreadID->addr_set.nb_entries++]);
+			ae->addr = reinterpret_cast<void*>(result + sizeof(struct entry_head));
+			ae->key = e1->key;
+			void *pptr = reinterpret_cast<void*>(result + sizeof(struct entry_head));
+			size_t size = e1->val.size;
+			void *qtr = e1->val.bfaddr;
+			memcpy(pptr, qtr, size);
+			result = result + e1->val.size + sizeof(struct entry_head);
+			e1 = e2;
    		}
 		return ptr;
 	}
@@ -262,18 +249,20 @@ void* log_find(Transaction* tx, void* addr)
 			}
 			return NULL;
 		}
+		
 		void* value = reinterpret_cast<void*>(val->logaddr);
 		if(val->tx_lock != 0){
 			return NULL;
 		}
-		version = val->version;
+		sval_t *v = ht_contains(tx->nodeMemory->ht, key);
+		version = v->version;
 		if(version > tx->end){ 
 			if(!snapshot_extend(tx)){
 				return NULL;
 
 			}
 				//成功扩展快照之后再检查一下锁，确保在扩展快照过程中没有其他事务提前获得锁并修改了值
-			if(val->tx_lock != 0 || version > tx->end){
+			if(v->tx_lock != 0 || version > tx->end){
 				return NULL;
 			}
 		}
