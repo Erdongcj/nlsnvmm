@@ -59,6 +59,5 @@ $ doxygen
 GPL-V2
 See license file under each module
 
-# 18-numa-lspm
 # NLSPM
-# nlnvm
+
