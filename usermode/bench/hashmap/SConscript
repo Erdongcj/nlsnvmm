@@ -1,0 +1,28 @@
+#import os
+
+Import('benchEnv')
+myEnv = benchEnv.Clone()
+
+Import('pmallocLibrary')
+Import('ptmLibrary')
+Import('mcoreLibrary')
+Import('logallocLibrary')
+myEnv['CPPPATH'] = ['#library/mcore/include', '#library/ptm/include', '#library/pmalloc/include', '#library/logalloc/include/include', '#library/common', '#library/atomic_ops', '#library/mcore/include/hal', '#library/mcore/include/log', '#library/pmalloc/include/alps/build/src', '#library/pmalloc/src/']
+myEnv.Append(CCFLAGS = '-std=c++11')
+myEnv.Append(CCFLAGS = '-Wno-write-strings')
+myEnv.Append(CCFLAGS = '-DBOOST_SYSTEM_NO_DEPRECATED')
+myEnv.Append(CCFLAGS = '-lboost_system')
+myEnv.Append(CCFLAGS = '-lboost_filesystem')
+myEnv.Append(CCFLAGS = '-O3 -mavx')
+myEnv.Append(CCFLAGS = '-lpthread -lnuma')
+sources = Split(
+		"""
+		hashmap_tx.cc
+		test.cc
+		""")
+myEnv.Append(LIBS = [ptmLibrary])
+myEnv.Append(LIBS = [mcoreLibrary])
+myEnv.Append(LIBS = [logallocLibrary])
+myEnv.Append(LIBS = [pmallocLibrary])
+myEnv.Program('hashmap',sources)
+
