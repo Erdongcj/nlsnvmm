@@ -1,4 +1,4 @@
-# NLNVM
+# NLSPM
 
 ### NLSPM: NUMA-aware Log-Structured Persistent Memory
 
